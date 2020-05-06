@@ -1,0 +1,36 @@
+.label_style {
+	background: rgba(40, 40, 40, 40);
+	color:white;
+    font-style:normal;
+    font-weight: 500;
+    font-size: 16px;
+    padding: 0px 0px 0px 0px;
+}
+
+.button_style {
+	background: rgba(60, 60, 60, 60);
+	color:white;
+    border:black;
+    font-family: Times New Roman;
+    font-style:normal;
+    font-weight: 500;
+    font-size: 16px;
+    padding: 0px 0px 0px 0px;
+}
+.button_style:active{
+	background-color: rgba(255, 255, 255, 255);
+	color:white;
+    font-family: Times New Roman;
+}
+
+.window_style {
+	background: rgba(40, 40, 40, 40);
+    color:white;
+    font-family: Times New Roman;
+}
+
+.editable_style{
+    background: rgba(40, 40, 40, 40);
+    color:black;
+    font-family: Times New Roman;
+}
