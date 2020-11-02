@@ -1,27 +1,14 @@
-#include <gtk/gtk.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "gtktemplate.h"
 #include <openssl/md5.h>
 #include <openssl/sha.h>
-#define arraysize(x)  (sizeof(x) / sizeof((x)[0]))
 
-void add_context(const gchar *style, GtkWidget *widget);
 void packboxes();
-void createwindow(const gchar *style);
-void create_entries();
-void set_spacing(GtkWidget *widget, int colspace, int rowspace);
-void createlabels(GtkWidget *label, gchar *labeltext[], const gchar *style);
-void createsinglesizegrid(GtkWidget *grid, gchar *labels[], void *callback[], int rows, int columns, const gchar *style[], int stylenumber);
-void button_connect_callback(GtkWidget *button, void *button_callback);
-void createradiobuttons(gchar *radiolabels[], void *radiocallback[], const gchar *style, int arraysize);
 void isSHA256();
 void isMD5();
 void createfilechoosers();
 void createrainbowtables();
 void readfiles();
 // compile with gcc -Wall -g tcollide.c -o tcollide `pkg-config --cflags --libs gtk+-3.0` -lcrypto
-
 
 struct widgets
 {
@@ -32,12 +19,10 @@ struct widgets
 	GtkWidget *radiobox;
 	GtkWidget *chooserbox;
 	GtkWidget *grid;
-	GtkWidget *label;
+	GtkWidget *labelgrid;
 	GtkWidget *filechoosers;
 	GtkWidget *rootbutton;
 	GtkWidget *connectwindow;
-	GtkWidget *connectinglabel;
-	GtkWidget *chooservbox;
 }gwidget;
 
 struct variables
@@ -67,111 +52,35 @@ void *buttoncallbacks[] = {readfiles, createrainbowtables};
 location.arraylen = arraysize(labeltext);
 size_t rlabels_size = arraysize(radiolabels);
 size_t buttonarr_size = arraysize(buttonlabels);
+
 gtk_init(&argc, &argv); //starting gtk 
 
-createwindow(style[0]);
+GtkWidget *window = createwindow("tcollide", GTK_WIN_POS_CENTER);
+gwidget.vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1); //creates a vbox without autosizing 
+gtk_container_add(GTK_CONTAINER(window), gwidget.vbox); //adds the vbox to the window 
 
-gwidget.buttonbox = gtk_grid_new(); 
-gwidget.chooserbox = gtk_grid_new();
-createlabels(gwidget.label, labeltext, style[1]);
-createsinglesizegrid(gwidget.buttonbox, buttonlabels, buttoncallbacks, 1, buttonarr_size, style, 2);
-createsinglesizegrid(gwidget.chooserbox, chooserlabels, choosercallbacks, 4,1, style, 2);
-set_spacing(gwidget.chooserbox, 4, 4);
+gwidget.buttonbox = createsinglesizegrid(buttonlabels, buttoncallbacks, 1, buttonarr_size);
 set_spacing(gwidget.buttonbox, 4, 4);
-createradiobuttons(radiolabels,radiocallback, style[1], rlabels_size);
+
+gwidget.chooserbox = createsinglesizegrid(chooserlabels, choosercallbacks, 4,1);
+set_spacing(gwidget.chooserbox, 4, 4);
+
+gwidget.labelgrid = createlabels(labeltext, location.arraylen);
+gwidget.radiobox = createradiobuttons(radiolabels,radiocallback, style[1], rlabels_size);
 packboxes();
 
-g_signal_connect(G_OBJECT(gwidget.window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
-
-gtk_widget_show_all(gwidget.window); //shows all widgets 
-
-gtk_main();//gtk main, this is the main loop of GTK
-}
-
-void add_context(const gchar *style, GtkWidget *widget)
-{
-	GtkCssProvider* Provider = gtk_css_provider_new();
-	gtk_css_provider_load_from_path(GTK_CSS_PROVIDER(Provider), "Styles.css", NULL);
-	GtkStyleContext *context = gtk_widget_get_style_context(widget);
-	gtk_style_context_add_class(context, style);
-	gtk_style_context_add_provider (context,GTK_STYLE_PROVIDER(Provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
-}
-
-void createwindow(const gchar *style)
-{
-	gwidget.window = gtk_window_new(GTK_WINDOW_TOPLEVEL); //creates toplevel window
-	gtk_window_set_title(GTK_WINDOW(gwidget.window), "TCollide"); //sets a window title 
-	gtk_window_set_position(GTK_WINDOW(gwidget.window), GTK_WIN_POS_CENTER); //opens the window in the center of the screen
-	gtk_container_set_border_width(GTK_CONTAINER(gwidget.window), 5); //sets the border size of the window
-	add_context(style, gwidget.window);
+show_and_destroy(window); //shows all widgets, connects the callback for the window and starts gtkmain
 }
 
 void packboxes()
 {
-	gwidget.vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1); //creates a vbox without autosizing 
 	gwidget.hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 1); //creates a vbox without autosizing 
-	gtk_container_add(GTK_CONTAINER(gwidget.window), gwidget.vbox); //adds the vbox to the window 
 	gtk_box_pack_start(GTK_BOX(gwidget.vbox),  gwidget.hbox, FALSE, FALSE, 0); //packs the display into the vbox
 	gtk_box_pack_start(GTK_BOX(gwidget.vbox),  gwidget.radiobox, FALSE, FALSE, 0); //packs the display into the vbox
 	gtk_box_pack_start(GTK_BOX(gwidget.vbox),  gwidget.buttonbox, FALSE, FALSE, 0); //packs the display into the vbox
+	gtk_box_pack_start(GTK_BOX(gwidget.hbox),  gwidget.labelgrid, FALSE, FALSE, 0); //packs the display into the vbox
 	gtk_box_pack_start(GTK_BOX(gwidget.hbox),  gwidget.grid, FALSE, FALSE, 0); //packs the display into the vbox
 	gtk_box_pack_start(GTK_BOX(gwidget.hbox),  gwidget.chooserbox, FALSE, FALSE, 0); //packs the display into the vbox
-}
-
-void createlabels(GtkWidget *label, gchar *labeltext[], const gchar *style)
-{
-	gwidget.grid = gtk_grid_new();
-
-	for (int i=0; i<location.arraylen; i++)
-	{
-		for(int j = 0; j<1; j++)
-		{	
-			label = gtk_label_new(labeltext[i]);
-			add_context(style, label);
-			gtk_grid_attach(GTK_GRID(gwidget.grid), label, j, i, 1, 1); //sets the defaults for creating each table button
-		}
-	}
-}
-
-void createradiobuttons(gchar *radiolabels[], void *radiocallback[], const gchar *style, int arraysize)
-{
-	gwidget.radiobox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 1); //creates a vbox without autosizing 
-	gwidget.rootbutton = gtk_radio_button_new_with_label(NULL, radiolabels[0]);
-	add_context(style, gwidget.rootbutton);
-	button_connect_callback(gwidget.rootbutton, radiocallback[0]);
-	gtk_box_pack_start(GTK_BOX(gwidget.radiobox), gwidget.rootbutton, FALSE, FALSE, 0); //packs the display into the vbox
-	GtkWidget *labels;
-	for (int i = 1; i<arraysize; i++)
-	{
-	labels = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(gwidget.rootbutton), radiolabels[i]);
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(labels), FALSE);
-	add_context(style, labels);
-	button_connect_callback(labels, radiocallback[i]);
-	gtk_box_pack_start(GTK_BOX(gwidget.radiobox), labels, FALSE, FALSE, 0); //packs the display into the vbox
-	}
-}
-
-void createsinglesizegrid(GtkWidget *grid, gchar *labels[], void *callback[], int rows, int columns, const gchar *style[], int stylenumber)
-{
-int pos = 0;
-GtkWidget *button; //widget for the buttons 
-	for (int i=0; i < rows; i++) //for loop for the rows
-	{
-		for (int j=0; j < columns; j++) //for loop for the columns
-		{
-		button = gtk_button_new_with_label(labels[pos]); //sets each button label to the respective button 
-		if(strcmp(labels[pos], "Open")==0)
-		{
-			location.placement++;
-			
-		}
-		button_connect_callback(button, callback[pos]); //attaches the button to the respective callback
-		gtk_grid_attach(GTK_GRID(grid), button, j, i, 1, 1); //sets the defaults for creating each table button
-		gtk_widget_set_size_request(button, 70, 30); //sets the size of the buttons
-		add_context(style[stylenumber], button);
-		pos++; //changes the position 
-		}
-	}
 }
 
 void createfilechoosers()
@@ -196,17 +105,6 @@ if (res == GTK_RESPONSE_ACCEPT)
   }
 
 gtk_widget_destroy (gwidget.filechoosers);
-}
-
-void button_connect_callback(GtkWidget *button, void *button_callback)
-{
-	g_signal_connect(button, "clicked", G_CALLBACK(button_callback), NULL);
-}
-
-void set_spacing(GtkWidget *widget, int colspace, int rowspace)
-{
-	gtk_grid_set_column_spacing(GTK_GRID(widget), colspace);
-	gtk_grid_set_row_spacing(GTK_GRID(widget), rowspace);
 }
 
 void readfiles()
@@ -338,11 +236,9 @@ void createrainbowtables()
 			{
 				break;
 			}
-
 		}
 		fclose(rainbow);
 	}
-
 }
 
 void isSHA256()
